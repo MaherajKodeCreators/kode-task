@@ -1,0 +1,122 @@
+// Prisma schema for the appointment booking system.
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  PATIENT
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(PATIENT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@map("users")
+}
+
+model Doctor {
+  id             String   @id @default(cuid())
+  name           String
+  specialization String
+  email          String?
+  phone          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  availabilities DoctorAvailability[]
+  breaks         DoctorBreak[]
+  appointments   Appointment[]
+
+  @@index([isActive])
+  @@map("doctors")
+}
+
+/// An availability window for a doctor on a day, e.g. 2026-09-20 09:00 -> 13:00.
+/// A doctor can now have SEVERAL of these per day (split hours), so there is
+/// no longer a unique(doctorId, date) - just an index for lookup.
+/// `date` is stored at UTC midnight; startMinutes/endMinutes are minutes from
+/// midnight (09:00 => 540). Storing minutes as integers keeps slot math exact
+/// and avoids timezone drift that a DateTime-based time column would introduce.
+model DoctorAvailability {
+  id           String   @id @default(cuid())
+  doctorId     String
+  date         DateTime @db.Date
+  startMinutes Int
+  endMinutes   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, date])
+  @@map("doctor_availabilities")
+}
+
+/// A break within a doctor's availability on a day, e.g. 10:30 -> 11:30.
+/// Slots overlapping any break are never offered to patients, and adding a
+/// break that overlaps an existing BOOKED appointment triggers an automatic
+/// reschedule to the nearest free slot (see lib/reschedule.ts).
+model DoctorBreak {
+  id           String   @id @default(cuid())
+  doctorId     String
+  date         DateTime @db.Date
+  startMinutes Int
+  endMinutes   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, date])
+  @@map("doctor_breaks")
+}
+
+/// A booked slot. `startMinutes`/`endMinutes` mirror DoctorAvailability so slot
+/// comparisons are plain integer math.
+///
+/// Double-booking is prevented by a PARTIAL unique index on
+/// (doctorId, date, startMinutes) WHERE status = 'BOOKED', added in the
+/// migration SQL. Prisma cannot express partial indexes in the schema DSL.
+/// A plain @@unique would block re-booking a slot that was cancelled, so the
+/// WHERE clause is what makes cancellation release the slot.
+model Appointment {
+  id           String            @id @default(cuid())
+  doctorId     String
+  patientId    String
+  date         DateTime          @db.Date
+  startMinutes Int
+  endMinutes   Int
+  status       AppointmentStatus @default(BOOKED)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  doctor  Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient User   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Slot lookup for a doctor on a given day.
+  @@index([doctorId, date, status])
+  // "My appointments" listing.
+  @@index([patientId, status])
+  @@map("appointments")
+}

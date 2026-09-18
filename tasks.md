@@ -635,3 +635,37 @@ Before finishing:
 - Test duplicate booking prevention.
 - Test cancellation and slot re-availability.
 - Test authorization so patients cannot access admin APIs.
+
+**\*** New Request **\***
+
+Developer Change Request
+Update the appointment booking system from the previous requirement. The existing Admin and Patient portals should continue to work, but the appointment availability rules now need to support split working hours and doctor breaks.
+
+1. Multiple Availability Periods
+   Admin can add multiple availability periods for the same day.
+   Example: Monday 9:00 AM to 1:00 PM and 2:00 PM to 5:00 PM.
+   Admin should be able to view the complete availability of each doctor.
+   Patient should see appointment slots only within the doctor's available periods.
+   Time between availability periods should not be shown as an appointment slot.
+2. Patient Appointment Slots
+   Patient selects a doctor and sees the available slots based on all availability periods set by Admin.
+   Already booked slots should remain unavailable.
+   Slots outside the doctor's availability should not be available for booking.
+3. Add Doctor Break
+   Admin can add a break for any doctor at any time.
+   The break can be within the doctor's normal availability.
+   The break should make that period unavailable for new appointments.
+   Patients should not be able to book appointments during the break.
+4. What Happens to Existing Appointments During a New Break
+   If Admin adds a break at a time where a patient already has an appointment, that appointment must be automatically moved.
+   The appointment should be moved to the nearest available time slot for the same doctor.
+   The new slot must be outside the doctor's availability breaks and must not already be booked.
+   The patient should see the updated appointment time after the change.
+5. Example
+   Doctor availability: 9:00 AM–1:00 PM and 2:00 PM–5:00 PM.
+   A patient has an appointment at 11:00 AM.
+   Admin later adds a break from 10:30 AM–11:30 AM.
+   The 11:00 AM appointment is affected by the new break.
+   The system should automatically move the appointment to the nearest available slot, provided that slot is available.
+6. Expected Flow
+   Admin sets multiple availability periods → Patient books an available slot → Admin adds a doctor break → System checks affected appointments → Affected appointment is automatically moved to the nearest available slot → Patient sees the updated appointment.
