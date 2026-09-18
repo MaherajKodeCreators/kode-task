@@ -31,13 +31,13 @@ export default async function PatientDoctorPage({ params }: PageProps<'/patient/
 
   return (
     <div className="space-y-4">
-      <Link href="/patient/doctors" className="text-sm text-slate-500 hover:underline">
+      <Link href="/patient/doctors" className="text-sm text-text-secondary hover:underline">
         ← Back to doctors
       </Link>
 
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">{doctor.name}</h1>
-        <p className="text-sm text-slate-500">{doctor.specialization}</p>
+        <h1 className="text-lg font-semibold text-text-primary">{doctor.name}</h1>
+        <p className="text-sm text-text-secondary">{doctor.specialization}</p>
       </div>
 
       <BookingPanel doctorId={doctor.id} availableDates={availableDates} />

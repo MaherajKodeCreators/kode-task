@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { apiPost } from '@/lib/api-client'
+import { Button } from '@/components/ui/button'
 
 type NavLink = { href: string; label: string }
 
@@ -28,11 +29,11 @@ export function PortalNav({
   }
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="border-b border-border-light bg-white">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-6">
-          <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-900 text-xs font-bold text-white">
+          <span className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-white">
               {title.charAt(0)}
             </span>
             {title}
@@ -44,8 +45,10 @@ export function PortalNav({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                    active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-sidebar-active-bg text-primary'
+                      : 'text-gray-700 hover:bg-primary/5'
                   }`}
                 >
                   {link.label}
@@ -55,19 +58,15 @@ export function PortalNav({
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-2 text-sm text-slate-500">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+          <span className="flex items-center gap-2 text-sm text-text-secondary">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-overlay text-xs font-semibold text-text-secondary">
               {userName.charAt(0).toUpperCase()}
             </span>
             {userName}
           </span>
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-          >
+          <Button variant="secondary" size="sm" loading={loggingOut} onClick={handleLogout}>
             {loggingOut ? 'Signing out…' : 'Logout'}
-          </button>
+          </Button>
         </div>
       </div>
     </header>

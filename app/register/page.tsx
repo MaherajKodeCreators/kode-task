@@ -43,10 +43,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-1 items-center justify-center bg-slate-50 px-4 py-12">
+    <main className="flex min-h-screen flex-1 items-center justify-center bg-surface px-4 py-12">
       <Card className="w-full max-w-sm">
-        <h1 className="text-lg font-semibold text-slate-900">Create your account</h1>
-        <p className="mt-1 text-sm text-slate-500">Register as a patient to book appointments.</p>
+        <h1 className="text-lg font-semibold text-text-primary">Create your account</h1>
+        <p className="mt-1 text-sm text-text-secondary">Register as a patient to book appointments.</p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
           {formError && <Alert kind="error">{formError}</Alert>}
@@ -76,9 +76,9 @@ export default function RegisterPage() {
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
+        <p className="mt-4 text-center text-sm text-text-secondary">
           Already registered?{' '}
-          <Link href="/login" className="font-medium text-slate-900 hover:underline">
+          <Link href="/login" className="font-medium text-text-primary hover:underline">
             Sign in
           </Link>
         </p>

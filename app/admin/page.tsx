@@ -11,7 +11,7 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
         <span className="text-lg font-semibold">{value}</span>
       </div>
       <div>
-        <p className="text-sm font-medium text-slate-900">{label}</p>
+        <p className="text-sm font-medium text-text-primary">{label}</p>
       </div>
     </Card>
   )
@@ -30,13 +30,13 @@ export default async function AdminIndexPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">Welcome back, {user.name.split(' ')[0]}</h1>
-        <p className="mt-1 text-sm text-slate-500">Here&apos;s what&apos;s happening across the clinic.</p>
+        <h1 className="text-lg font-semibold text-text-primary">Welcome back, {user.name.split(' ')[0]}</h1>
+        <p className="mt-1 text-sm text-text-secondary">Here&apos;s what&apos;s happening across the clinic.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Active doctors" value={activeDoctors} accent="bg-green-100 text-green-700" />
-        <StatCard label="Total doctors" value={totalDoctors} accent="bg-slate-100 text-slate-700" />
+        <StatCard label="Total doctors" value={totalDoctors} accent="bg-surface-overlay text-text-primary" />
         <StatCard
           label="Upcoming appointments"
           value={upcomingAppointments}
@@ -51,21 +51,21 @@ export default async function AdminIndexPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
-          <h2 className="text-sm font-semibold text-slate-900">Doctors</h2>
-          <p className="mt-1 text-sm text-slate-500">Add, edit, or deactivate doctors on the roster.</p>
+          <h2 className="text-sm font-semibold text-text-primary">Doctors</h2>
+          <p className="mt-1 text-sm text-text-secondary">Add, edit, or deactivate doctors on the roster.</p>
           <Link
             href="/admin/doctors"
-            className="mt-4 inline-block text-sm font-medium text-slate-900 hover:underline"
+            className="mt-4 inline-block text-sm font-medium text-text-primary hover:underline"
           >
             Manage doctors →
           </Link>
         </Card>
         <Card>
-          <h2 className="text-sm font-semibold text-slate-900">Availability</h2>
-          <p className="mt-1 text-sm text-slate-500">Set booking windows and record doctor breaks.</p>
+          <h2 className="text-sm font-semibold text-text-primary">Availability</h2>
+          <p className="mt-1 text-sm text-text-secondary">Set booking windows and record doctor breaks.</p>
           <Link
             href="/admin/availability"
-            className="mt-4 inline-block text-sm font-medium text-slate-900 hover:underline"
+            className="mt-4 inline-block text-sm font-medium text-text-primary hover:underline"
           >
             Manage availability →
           </Link>

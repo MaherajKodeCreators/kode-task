@@ -10,7 +10,7 @@ type FieldWrapperProps = {
 export function FieldWrapper({ label, error, children, htmlFor }: FieldWrapperProps) {
   return (
     <div className="space-y-1">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-slate-700">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-text-primary">
         {label}
       </label>
       {children}
@@ -24,7 +24,7 @@ export function FieldWrapper({ label, error, children, htmlFor }: FieldWrapperPr
 }
 
 const inputClasses =
-  'block w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 disabled:bg-slate-50 disabled:text-slate-500'
+  'block w-full min-h-12 rounded-[8px] border border-border-light px-3.5 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-surface disabled:text-text-secondary'
 
 type InputFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string
@@ -102,7 +102,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(fu
           aria-label={visible ? 'Hide password' : 'Show password'}
           aria-pressed={visible}
           tabIndex={-1}
-          className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-slate-400 hover:text-slate-600"
+          className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-text-secondary hover:text-text-primary"
         >
           <EyeIcon off={visible} />
         </button>

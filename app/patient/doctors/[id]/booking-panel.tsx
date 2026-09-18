@@ -111,7 +111,7 @@ export function BookingPanel({
   return (
     <div className="space-y-4">
       <Card>
-        <label htmlFor="date" className="block text-sm font-medium text-slate-700">
+        <label htmlFor="date" className="block text-sm font-medium text-text-primary">
           Select a date
         </label>
         <select
@@ -122,7 +122,7 @@ export function BookingPanel({
             setPendingSlot(null)
             setDate(event.target.value)
           }}
-          className="mt-1 block w-full max-w-xs rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="mt-1 block w-full max-w-xs rounded-[8px] border border-border-light px-3 py-2 text-sm text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
         >
           {availableDates.map((value) => (
             <option key={value} value={value}>
@@ -158,9 +158,9 @@ export function BookingPanel({
       )}
 
       <Card>
-        <h2 className="text-sm font-semibold text-slate-900">Available slots</h2>
+        <h2 className="text-sm font-semibold text-text-primary">Available slots</h2>
         {data && data.windows.length > 0 && (
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-text-secondary">
             Availability{' '}
             {data.windows.map((w, i) => (
               <span key={i}>

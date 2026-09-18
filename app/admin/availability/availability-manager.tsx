@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { availabilitySchema, breakSchema, type AvailabilityInput, type BreakInput } from '@/lib/validations'
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { InputField, SelectField } from '@/components/ui/field'
 import { Alert } from '@/components/ui/alert'
 import { Card, EmptyState, Spinner } from '@/components/ui/card'
+import { SkeletonRow } from '@/components/ui/skeleton'
 import { formatDateOnly, minutesToLabel, parseTimeToMinutes, todayUtc } from '@/lib/time'
 
 const TODAY = formatDateOnly(todayUtc())
@@ -159,7 +161,7 @@ export function AvailabilityManager() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-slate-900">Doctor availability</h1>
+      <h1 className="text-lg font-semibold text-text-primary">Doctor availability</h1>
 
       {error && <Alert kind="error">{error}</Alert>}
       {success && <Alert kind="success">{success}</Alert>}
@@ -183,8 +185,8 @@ export function AvailabilityManager() {
       )}
 
       <Card className="max-w-2xl">
-        <h2 className="text-sm font-semibold text-slate-900">Add availability window</h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-text-primary">Add availability window</h2>
+        <p className="mt-1 text-xs text-text-secondary">
           A doctor can have several windows per day for split hours (e.g. 9–1 and 2–5). New windows
           must not overlap existing ones.
         </p>
@@ -246,6 +248,7 @@ export function AvailabilityManager() {
             </div>
 
             <Button type="submit" loading={availabilityForm.formState.isSubmitting}>
+              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               Add window
             </Button>
           </form>
@@ -253,8 +256,8 @@ export function AvailabilityManager() {
       </Card>
 
       <Card className="max-w-2xl">
-        <h2 className="text-sm font-semibold text-slate-900">Add a doctor break</h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <h2 className="text-sm font-semibold text-text-primary">Add a doctor break</h2>
+        <p className="mt-1 text-xs text-text-secondary">
           If a booked appointment falls inside the break, it is automatically moved to the nearest
           free slot that day.
         </p>
@@ -309,6 +312,7 @@ export function AvailabilityManager() {
             </div>
 
             <Button type="submit" variant="secondary" loading={breakForm.formState.isSubmitting}>
+              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               Add break
             </Button>
           </form>
@@ -316,48 +320,50 @@ export function AvailabilityManager() {
       </Card>
 
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900">All availability windows</h2>
+        <h2 className="text-sm font-semibold text-text-primary">All availability windows</h2>
 
-        {days === null ? (
-          <Spinner />
-        ) : days.length === 0 ? (
+        {days !== null && days.length === 0 ? (
           <EmptyState title="No availability configured yet" />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50">
+          <div className="overflow-hidden rounded-lg border border-border-light bg-white">
+            <table className="min-w-full divide-y divide-border-light text-sm">
+              <thead className="bg-surface">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-slate-500">Doctor</th>
-                  <th className="px-4 py-2 text-left font-medium text-slate-500">Date</th>
-                  <th className="px-4 py-2 text-left font-medium text-slate-500">Window</th>
-                  <th className="px-4 py-2 text-right font-medium text-slate-500">Actions</th>
+                  <th className="px-4 py-2 text-left font-medium text-text-secondary">Doctor</th>
+                  <th className="px-4 py-2 text-left font-medium text-text-secondary">Date</th>
+                  <th className="px-4 py-2 text-left font-medium text-text-secondary">Window</th>
+                  <th className="px-4 py-2 text-right font-medium text-text-secondary">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {days.map((day) => (
-                  <tr key={day.id}>
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-slate-900">{day.doctor?.name}</span>
-                      <span className="block text-xs text-slate-500">
-                        {day.doctor?.specialization}
-                        {day.doctor && !day.doctor.isActive && ' · inactive'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{day.date}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {formatWindow(day.startTime, day.endTime)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => removeDay(day)}
-                        disabled={pendingId === day.id}
-                        className="rounded-md px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                      >
-                        {pendingId === day.id ? 'Removing…' : 'Remove'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-border-light">
+                {days === null
+                  ? Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} columns={4} />)
+                  : days.map((day) => (
+                      <tr key={day.id} className="hover:bg-surface">
+                        <td className="px-4 py-3">
+                          <span className="font-medium text-text-primary">{day.doctor?.name}</span>
+                          <span className="block text-xs text-text-secondary">
+                            {day.doctor?.specialization}
+                            {day.doctor && !day.doctor.isActive && ' · inactive'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-text-secondary">{day.date}</td>
+                        <td className="px-4 py-3 text-text-secondary">
+                          {formatWindow(day.startTime, day.endTime)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeDay(day)}
+                            loading={pendingId === day.id}
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            {pendingId === day.id ? 'Removing…' : 'Remove'}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>
@@ -365,42 +371,44 @@ export function AvailabilityManager() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900">All breaks</h2>
+        <h2 className="text-sm font-semibold text-text-primary">All breaks</h2>
 
-        {breaks === null ? (
-          <Spinner />
-        ) : breaks.length === 0 ? (
+        {breaks !== null && breaks.length === 0 ? (
           <EmptyState title="No breaks configured" />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50">
+          <div className="overflow-hidden rounded-lg border border-border-light bg-white">
+            <table className="min-w-full divide-y divide-border-light text-sm">
+              <thead className="bg-surface">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-slate-500">Doctor</th>
-                  <th className="px-4 py-2 text-left font-medium text-slate-500">Date</th>
-                  <th className="px-4 py-2 text-left font-medium text-slate-500">Break</th>
-                  <th className="px-4 py-2 text-right font-medium text-slate-500">Actions</th>
+                  <th className="px-4 py-2 text-left font-medium text-text-secondary">Doctor</th>
+                  <th className="px-4 py-2 text-left font-medium text-text-secondary">Date</th>
+                  <th className="px-4 py-2 text-left font-medium text-text-secondary">Break</th>
+                  <th className="px-4 py-2 text-right font-medium text-text-secondary">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {breaks.map((brk) => (
-                  <tr key={brk.id}>
-                    <td className="px-4 py-3 font-medium text-slate-900">{brk.doctor?.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{brk.date}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {formatWindow(brk.startTime, brk.endTime)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => removeBreak(brk)}
-                        disabled={pendingId === brk.id}
-                        className="rounded-md px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                      >
-                        {pendingId === brk.id ? 'Removing…' : 'Remove'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-border-light">
+                {breaks === null
+                  ? Array.from({ length: 2 }).map((_, i) => <SkeletonRow key={i} columns={4} />)
+                  : breaks.map((brk) => (
+                      <tr key={brk.id} className="hover:bg-surface">
+                        <td className="px-4 py-3 font-medium text-text-primary">{brk.doctor?.name}</td>
+                        <td className="px-4 py-3 text-text-secondary">{brk.date}</td>
+                        <td className="px-4 py-3 text-text-secondary">
+                          {formatWindow(brk.startTime, brk.endTime)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeBreak(brk)}
+                            loading={pendingId === brk.id}
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            {pendingId === brk.id ? 'Removing…' : 'Remove'}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>

@@ -54,12 +54,12 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-sm">
       {portal ? (
-        <Link href="/" className="text-sm text-slate-500 hover:underline">
+        <Link href="/" className="text-sm text-text-secondary hover:underline">
           ← Choose a different portal
         </Link>
       ) : null}
-      <h1 className="mt-1 text-lg font-semibold text-slate-900">{portal?.title ?? 'Sign in'}</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <h1 className="mt-1 text-lg font-semibold text-text-primary">{portal?.title ?? 'Sign in'}</h1>
+      <p className="mt-1 text-sm text-text-secondary">
         {portal?.subtitle ?? 'Access your patient or admin portal.'}
       </p>
 
@@ -86,9 +86,9 @@ function LoginForm() {
       </form>
 
       {portal?.role !== 'ADMIN' && (
-        <p className="mt-4 text-center text-sm text-slate-500">
+        <p className="mt-4 text-center text-sm text-text-secondary">
           New patient?{' '}
-          <Link href="/register" className="font-medium text-slate-900 hover:underline">
+          <Link href="/register" className="font-medium text-text-primary hover:underline">
             Create an account
           </Link>
         </p>
@@ -99,7 +99,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen flex-1 items-center justify-center bg-slate-50 px-4 py-12">
+    <main className="flex min-h-screen flex-1 items-center justify-center bg-surface px-4 py-12">
       <Suspense>
         <LoginForm />
       </Suspense>
