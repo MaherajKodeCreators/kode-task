@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,8 +10,12 @@ import type { AvailabilityDay, Doctor, DoctorBreak } from '@/types'
 import { Button } from '@/components/ui/button'
 import { InputField, SelectField } from '@/components/ui/field'
 import { Alert } from '@/components/ui/alert'
-import { Card, EmptyState, Spinner } from '@/components/ui/card'
+import { Card, EmptyState } from '@/components/ui/card'
 import { SkeletonRow } from '@/components/ui/skeleton'
+import { SearchInput } from '@/components/ui/filter-bar'
+import { Pagination } from '@/components/ui/pagination'
+import { Modal } from '@/components/ui/modal'
+import { DEFAULT_PAGE_SIZE, usePagination } from '@/lib/use-pagination'
 import { formatDateOnly, minutesToLabel, parseTimeToMinutes, todayUtc } from '@/lib/time'
 
 const TODAY = formatDateOnly(todayUtc())
@@ -33,6 +37,8 @@ export function AvailabilityManager() {
   const [success, setSuccess] = useState<string | null>(null)
   const [rescheduled, setRescheduled] = useState<RescheduledNote[]>([])
   const [pendingId, setPendingId] = useState<string | null>(null)
+  const [windowModalOpen, setWindowModalOpen] = useState(false)
+  const [breakModalOpen, setBreakModalOpen] = useState(false)
 
   const availabilityForm = useForm<AvailabilityInput>({
     resolver: zodResolver(availabilitySchema),
@@ -101,7 +107,8 @@ export function AvailabilityManager() {
     }
 
     setSuccess('Availability window added.')
-    availabilityForm.reset({ ...values })
+    availabilityForm.reset({ startTime: '09:00', endTime: '13:00' })
+    setWindowModalOpen(false)
     await loadAvailability()
   }
 
@@ -137,7 +144,8 @@ export function AvailabilityManager() {
 
     setSuccess('Break added.')
     setRescheduled(result.data.rescheduled)
-    breakForm.reset({ ...values })
+    breakForm.reset()
+    setBreakModalOpen(false)
     await Promise.all([loadBreaks(), loadAvailability()])
   }
 
@@ -159,9 +167,23 @@ export function AvailabilityManager() {
 
   const activeDoctors = doctors?.filter((doctor) => doctor.isActive) ?? []
 
+  const noActiveDoctors = doctors !== null && activeDoctors.length === 0
+
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-text-primary">Doctor availability</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold text-text-primary">Doctor availability</h1>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setBreakModalOpen(true)}>
+            <Plus className="h-4 w-4 shrink-0 translate-y-px" strokeWidth={2.5} aria-hidden />
+            Add break
+          </Button>
+          <Button onClick={() => setWindowModalOpen(true)}>
+            <Plus className="h-4 w-4 shrink-0 translate-y-px" strokeWidth={2.5} aria-hidden />
+            Add window
+          </Button>
+        </div>
+      </div>
 
       {error && <Alert kind="error">{error}</Alert>}
       {success && <Alert kind="success">{success}</Alert>}
@@ -184,26 +206,24 @@ export function AvailabilityManager() {
         </Alert>
       )}
 
-      <Card className="max-w-2xl">
-        <h2 className="text-sm font-semibold text-text-primary">Add availability window</h2>
-        <p className="mt-1 text-xs text-text-secondary">
-          A doctor can have several windows per day for split hours (e.g. 9–1 and 2–5). New windows
-          must not overlap existing ones.
-        </p>
+      <WindowsTable days={days} pendingId={pendingId} onRemove={removeDay} />
+      <BreaksTable breaks={breaks} pendingId={pendingId} onRemove={removeBreak} />
 
-        {doctors === null ? (
-          <Spinner />
-        ) : activeDoctors.length === 0 ? (
-          <div className="mt-4">
-            <EmptyState
-              title="No active doctors"
-              description="Add or activate a doctor before setting availability."
-            />
-          </div>
+      <Modal
+        open={windowModalOpen}
+        onClose={() => setWindowModalOpen(false)}
+        title="Add availability window"
+        description="A doctor can have several windows per day for split hours (e.g. 9–1 and 2–5). New windows must not overlap existing ones."
+      >
+        {noActiveDoctors ? (
+          <EmptyState
+            title="No active doctors"
+            description="Add or activate a doctor before setting availability."
+          />
         ) : (
           <form
             onSubmit={availabilityForm.handleSubmit(onSubmitAvailability)}
-            className="mt-4 space-y-4"
+            className="space-y-4"
             noValidate
           >
             <SelectField
@@ -247,29 +267,28 @@ export function AvailabilityManager() {
               />
             </div>
 
-            <Button type="submit" loading={availabilityForm.formState.isSubmitting}>
-              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-              Add window
-            </Button>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setWindowModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={availabilityForm.formState.isSubmitting}>
+                Add window
+              </Button>
+            </div>
           </form>
         )}
-      </Card>
+      </Modal>
 
-      <Card className="max-w-2xl">
-        <h2 className="text-sm font-semibold text-text-primary">Add a doctor break</h2>
-        <p className="mt-1 text-xs text-text-secondary">
-          If a booked appointment falls inside the break, it is automatically moved to the nearest
-          free slot that day.
-        </p>
-
-        {doctors === null ? (
-          <Spinner />
-        ) : activeDoctors.length === 0 ? (
-          <div className="mt-4">
-            <EmptyState title="No active doctors" />
-          </div>
+      <Modal
+        open={breakModalOpen}
+        onClose={() => setBreakModalOpen(false)}
+        title="Add a doctor break"
+        description="If a booked appointment falls inside the break, it is automatically moved to the nearest free slot that day."
+      >
+        {noActiveDoctors ? (
+          <EmptyState title="No active doctors" />
         ) : (
-          <form onSubmit={breakForm.handleSubmit(onSubmitBreak)} className="mt-4 space-y-4" noValidate>
+          <form onSubmit={breakForm.handleSubmit(onSubmitBreak)} className="space-y-4" noValidate>
             <SelectField
               label="Doctor"
               error={breakForm.formState.errors.doctorId?.message}
@@ -311,21 +330,69 @@ export function AvailabilityManager() {
               />
             </div>
 
-            <Button type="submit" variant="secondary" loading={breakForm.formState.isSubmitting}>
-              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-              Add break
-            </Button>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setBreakModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={breakForm.formState.isSubmitting}>
+                Add break
+              </Button>
+            </div>
           </form>
         )}
-      </Card>
+      </Modal>
+    </div>
+  )
+}
 
-      <div className="space-y-3">
+function WindowsTable({
+  days,
+  pendingId,
+  onRemove,
+}: {
+  days: AvailabilityDay[] | null
+  pendingId: string | null
+  onRemove: (day: AvailabilityDay) => void
+}) {
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    if (!days) return []
+    const q = search.trim().toLowerCase()
+    if (!q) return days
+    return days.filter(
+      (day) =>
+        day.doctor?.name.toLowerCase().includes(q) ||
+        day.doctor?.specialization.toLowerCase().includes(q)
+    )
+  }, [days, search])
+
+  const { page, pageCount, pageItems, goToPage, resetPage } = usePagination(filtered)
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-text-primary">All availability windows</h2>
+        {days && days.length > 0 && (
+          <SearchInput
+            value={search}
+            onChange={(value) => {
+              setSearch(value)
+              resetPage()
+            }}
+            placeholder="Search doctor…"
+          />
+        )}
+      </div>
 
-        {days !== null && days.length === 0 ? (
-          <EmptyState title="No availability configured yet" />
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-border-light bg-white">
+      {days !== null && days.length === 0 && <EmptyState title="No availability configured yet" />}
+      {days !== null && days.length > 0 && filtered.length === 0 && (
+        <EmptyState title="No matching windows" description="Try a different search." />
+      )}
+
+      {(days === null || pageItems.length > 0) && (
+        <>
+          <div className="hidden overflow-hidden rounded-lg border border-border-light bg-white sm:block">
             <table className="min-w-full divide-y divide-border-light text-sm">
               <thead className="bg-surface">
                 <tr>
@@ -338,7 +405,7 @@ export function AvailabilityManager() {
               <tbody className="divide-y divide-border-light">
                 {days === null
                   ? Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} columns={4} />)
-                  : days.map((day) => (
+                  : pageItems.map((day) => (
                       <tr key={day.id} className="hover:bg-surface">
                         <td className="px-4 py-3">
                           <span className="font-medium text-text-primary">{day.doctor?.name}</span>
@@ -355,7 +422,7 @@ export function AvailabilityManager() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeDay(day)}
+                            onClick={() => onRemove(day)}
                             loading={pendingId === day.id}
                             className="text-red-600 hover:bg-red-50"
                           >
@@ -367,16 +434,98 @@ export function AvailabilityManager() {
               </tbody>
             </table>
           </div>
+
+          <div className="space-y-3 sm:hidden">
+            {days === null
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i} className="h-20 animate-pulse bg-surface" />
+                ))
+              : pageItems.map((day) => (
+                  <Card key={day.id} className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-text-primary">{day.doctor?.name}</p>
+                      <p className="text-xs text-text-secondary">
+                        {day.doctor?.specialization}
+                        {day.doctor && !day.doctor.isActive && ' · inactive'}
+                      </p>
+                      <p className="mt-1 text-sm text-text-secondary">
+                        {day.date} · {formatWindow(day.startTime, day.endTime)}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRemove(day)}
+                      loading={pendingId === day.id}
+                      className="shrink-0 text-red-600 hover:bg-red-50"
+                    >
+                      {pendingId === day.id ? '…' : 'Remove'}
+                    </Button>
+                  </Card>
+                ))}
+          </div>
+
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            onChange={goToPage}
+            totalItems={filtered.length}
+            pageSize={DEFAULT_PAGE_SIZE}
+          />
+        </>
+      )}
+    </div>
+  )
+}
+
+function BreaksTable({
+  breaks,
+  pendingId,
+  onRemove,
+}: {
+  breaks: DoctorBreak[] | null
+  pendingId: string | null
+  onRemove: (brk: DoctorBreak) => void
+}) {
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    if (!breaks) return []
+    const q = search.trim().toLowerCase()
+    if (!q) return breaks
+    return breaks.filter(
+      (brk) =>
+        brk.doctor?.name.toLowerCase().includes(q) ||
+        brk.doctor?.specialization.toLowerCase().includes(q)
+    )
+  }, [breaks, search])
+
+  const { page, pageCount, pageItems, goToPage, resetPage } = usePagination(filtered)
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-text-primary">All breaks</h2>
+        {breaks && breaks.length > 0 && (
+          <SearchInput
+            value={search}
+            onChange={(value) => {
+              setSearch(value)
+              resetPage()
+            }}
+            placeholder="Search doctor…"
+          />
         )}
       </div>
 
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-text-primary">All breaks</h2>
+      {breaks !== null && breaks.length === 0 && <EmptyState title="No breaks configured" />}
+      {breaks !== null && breaks.length > 0 && filtered.length === 0 && (
+        <EmptyState title="No matching breaks" description="Try a different search." />
+      )}
 
-        {breaks !== null && breaks.length === 0 ? (
-          <EmptyState title="No breaks configured" />
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-border-light bg-white">
+      {(breaks === null || pageItems.length > 0) && (
+        <>
+          <div className="hidden overflow-hidden rounded-lg border border-border-light bg-white sm:block">
             <table className="min-w-full divide-y divide-border-light text-sm">
               <thead className="bg-surface">
                 <tr>
@@ -389,7 +538,7 @@ export function AvailabilityManager() {
               <tbody className="divide-y divide-border-light">
                 {breaks === null
                   ? Array.from({ length: 2 }).map((_, i) => <SkeletonRow key={i} columns={4} />)
-                  : breaks.map((brk) => (
+                  : pageItems.map((brk) => (
                       <tr key={brk.id} className="hover:bg-surface">
                         <td className="px-4 py-3 font-medium text-text-primary">{brk.doctor?.name}</td>
                         <td className="px-4 py-3 text-text-secondary">{brk.date}</td>
@@ -400,7 +549,7 @@ export function AvailabilityManager() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeBreak(brk)}
+                            onClick={() => onRemove(brk)}
                             loading={pendingId === brk.id}
                             className="text-red-600 hover:bg-red-50"
                           >
@@ -412,8 +561,42 @@ export function AvailabilityManager() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+
+          <div className="space-y-3 sm:hidden">
+            {breaks === null
+              ? Array.from({ length: 2 }).map((_, i) => (
+                  <Card key={i} className="h-20 animate-pulse bg-surface" />
+                ))
+              : pageItems.map((brk) => (
+                  <Card key={brk.id} className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-text-primary">{brk.doctor?.name}</p>
+                      <p className="mt-1 text-sm text-text-secondary">
+                        {brk.date} · {formatWindow(brk.startTime, brk.endTime)}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRemove(brk)}
+                      loading={pendingId === brk.id}
+                      className="shrink-0 text-red-600 hover:bg-red-50"
+                    >
+                      {pendingId === brk.id ? '…' : 'Remove'}
+                    </Button>
+                  </Card>
+                ))}
+          </div>
+
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            onChange={goToPage}
+            totalItems={filtered.length}
+            pageSize={DEFAULT_PAGE_SIZE}
+          />
+        </>
+      )}
     </div>
   )
 }

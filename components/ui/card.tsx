@@ -1,6 +1,12 @@
 import { Inbox } from 'lucide-react'
 
-export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+export function Card({
+  children,
+  className = '',
+}: {
+  children?: React.ReactNode
+  className?: string
+}) {
   return (
     <div className={`rounded-2xl border border-border-light bg-white p-6 ${className}`}>
       {children}
